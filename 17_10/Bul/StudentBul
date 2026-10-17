@@ -4,15 +4,15 @@ using WinFormsApp2.data.entity;
 
 namespace WinFormsApp2.bul;
 
-public class StudentBusiness
+public class StudentBul
 {
     private readonly StudentDataAccess _studentDataAccess;
-    private readonly ClassBusiness _classBusiness;
+    private readonly ClassBul _classBul;
 
-    public StudentBusiness(StudentDataAccess studentDataAccess, ClassBusiness classBusiness)
+    public StudentBul(StudentDataAccess studentDataAccess, ClassBul classBul)
     {
         _studentDataAccess = studentDataAccess;
-        _classBusiness = classBusiness;
+        _classlness = classBul;
     }
 
     public List<Student> GetAll()
