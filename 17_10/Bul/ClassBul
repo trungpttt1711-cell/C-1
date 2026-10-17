@@ -5,12 +5,12 @@ using WinFormsApp2.data.entity;
 
 namespace WinFormsApp2.bul;
 
-public class ClassBusiness
+public class ClassBul
 {
     private static readonly Regex ClassCodeRegex = new("^CSE\\d{4}$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private readonly ClassDataAccess _classDataAccess;
 
-    public ClassBusiness(ClassDataAccess classDataAccess)
+    public ClassBul(ClassDataAccess classDataAccess)
     {
         _classDataAccess = classDataAccess;
     }
