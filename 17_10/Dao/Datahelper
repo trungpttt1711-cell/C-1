@@ -1,0 +1,26 @@
+
+using System;
+using MySql.Data.MySqlClient;
+
+namespace StudentManagement.WinForms.DAL
+{
+    public static class DataHelper
+    {
+        private static readonly string connectionString =
+            "Server=localhost;Port=3306;Database=QuanLySinhVienDB;Uid=root;Pwd=;";
+
+        public static MySqlConnection GetConnection()
+        {
+            return new MySqlConnection(connectionString);
+        }
+
+        public static bool TestConnection()
+        {
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                return conn.State == System.Data.ConnectionState.Open;
+            }
+        }
+    }
+}
