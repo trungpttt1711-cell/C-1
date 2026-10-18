@@ -1,25 +1,98 @@
 
 using System;
+using System.Data;
 using MySql.Data.MySqlClient;
 
-namespace StudentManagement.WinForms.DAL
+namespace QuanLySinhVien.DAL
 {
-    public static class DataHelper
+    public class DataHelper
     {
         private static readonly string connectionString =
-            "Server=localhost;Port=3306;Database=QuanLySinhVienDB;Uid=root;Pwd=;";
+            "Server=127.0.0.1;" +
+            "Port=3306;" +
+            "Database=QuanLySinhVienMoi;" +
+            "Uid=root;" +
+            "Pwd=;" +
+            "CharSet=utf8mb4;";
 
         public static MySqlConnection GetConnection()
         {
             return new MySqlConnection(connectionString);
         }
 
-        public static bool TestConnection()
+        public static bool TestConnection(out string message)
+        {
+            try
+            {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    message = "Kết nối MySQL thành công!";
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                message = "Kết nối MySQL thất bại: " + ex.Message;
+                return false;
+            }
+        }
+
+        public static DataTable ExecuteQuery(
+            string sql,
+            params MySqlParameter[] parameters)
         {
             using (MySqlConnection conn = GetConnection())
+            using (MySqlCommand cmd = new MySqlCommand(sql, conn))
+            using (MySqlDataAdapter adapter = new MySqlDataAdapter(cmd))
             {
+                if (parameters != null)
+                {
+                    cmd.Parameters.AddRange(parameters);
+                }
+
+                DataTable table = new DataTable();
+
                 conn.Open();
-                return conn.State == System.Data.ConnectionState.Open;
+                adapter.Fill(table);
+
+                return table;
+            }
+        }
+
+        public static int ExecuteNonQuery(
+            string sql,
+            params MySqlParameter[] parameters)
+        {
+            using (MySqlConnection conn = GetConnection())
+            using (MySqlCommand cmd = new MySqlCommand(sql, conn))
+            {
+                if (parameters != null)
+                {
+                    cmd.Parameters.AddRange(parameters);
+                }
+
+                conn.Open();
+
+                return cmd.ExecuteNonQuery();
+            }
+        }
+
+        public static object ExecuteScalar(
+            string sql,
+            params MySqlParameter[] parameters)
+        {
+            using (MySqlConnection conn = GetConnection())
+            using (MySqlCommand cmd = new MySqlCommand(sql, conn))
+            {
+                if (parameters != null)
+                {
+                    cmd.Parameters.AddRange(parameters);
+                }
+
+                conn.Open();
+
+                return cmd.ExecuteScalar();
             }
         }
     }
