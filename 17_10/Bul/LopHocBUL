@@ -1,0 +1,143 @@
+
+using System;
+using System.Collections.Generic;
+using QuanLySinhVien.DAL;
+using QuanLySinhVien.DTO;
+
+namespace QuanLySinhVien.BUL
+{
+    public class LopHocBUL
+    {
+        private readonly LopHocDAO lopHocDAO;
+
+        public LopHocBUL()
+        {
+            lopHocDAO = new LopHocDAO();
+        }
+
+        public List<LopHoc> LayDanhSachLop()
+        {
+            return lopHocDAO.LayDanhSachLop();
+        }
+
+        public LopHoc? TimTheoMa(string maLop)
+        {
+            if (string.IsNullOrWhiteSpace(maLop))
+            {
+                throw new ArgumentException(
+                    "Mã lớp không được để trống.");
+            }
+
+            return lopHocDAO.TimTheoMa(maLop.Trim());
+        }
+
+        public bool KiemTraTonTai(string maLop)
+        {
+            if (string.IsNullOrWhiteSpace(maLop))
+            {
+                throw new ArgumentException(
+                    "Mã lớp không được để trống.");
+            }
+
+            return lopHocDAO.KiemTraTonTai(maLop.Trim());
+        }
+
+        public bool KiemTraHopLe(
+            LopHoc lop, out string thongBao)
+        {
+            if (lop == null)
+            {
+                thongBao = "Thông tin lớp học không hợp lệ.";
+                return false;
+            }
+
+            lop.MaLop = lop.MaLop?.Trim() ?? "";
+            lop.TenLop = lop.TenLop?.Trim() ?? "";
+
+            return lop.KiemTraHopLe(out thongBao);
+        }
+
+        private void XacThucLopHoc(LopHoc lop)
+        {
+            if (!KiemTraHopLe(lop, out string thongBao))
+            {
+                throw new ArgumentException(thongBao);
+            }
+
+            if (string.IsNullOrWhiteSpace(lop.TenLop))
+            {
+                throw new ArgumentException(
+                    "Tên lớp không được để trống.");
+            }
+        }
+
+        public bool Them(LopHoc lop, out string thongBao)
+        {
+            XacThucLopHoc(lop);
+
+            if (lopHocDAO.KiemTraTonTai(lop.MaLop))
+            {
+                throw new InvalidOperationException(
+                    "Mã lớp đã tồn tại.");
+            }
+
+            bool ketQua = lopHocDAO.Them(lop);
+
+            thongBao = ketQua
+                ? "Thêm lớp học thành công!"
+                : "Không thể thêm lớp học.";
+
+            return ketQua;
+        }
+
+        public bool Sua(LopHoc lop, out string thongBao)
+        {
+            XacThucLopHoc(lop);
+
+            if (!lopHocDAO.KiemTraTonTai(lop.MaLop))
+            {
+                throw new InvalidOperationException(
+                    "Lớp học không tồn tại.");
+            }
+
+            bool ketQua = lopHocDAO.Sua(lop);
+
+            thongBao = ketQua
+                ? "Cập nhật lớp học thành công!"
+                : "Không thể cập nhật lớp học.";
+
+            return ketQua;
+        }
+
+        public bool Xoa(string maLop, out string thongBao)
+        {
+            if (string.IsNullOrWhiteSpace(maLop))
+            {
+                throw new ArgumentException(
+                    "Vui lòng nhập mã lớp cần xóa.");
+            }
+
+            maLop = maLop.Trim();
+
+            if (!lopHocDAO.KiemTraTonTai(maLop))
+            {
+                throw new InvalidOperationException(
+                    "Lớp học không tồn tại.");
+            }
+
+            if (lopHocDAO.LopCoSinhVien(maLop))
+            {
+                throw new InvalidOperationException(
+                    "Không thể xóa lớp vì lớp đang có sinh viên.");
+            }
+
+            bool ketQua = lopHocDAO.Xoa(maLop);
+
+            thongBao = ketQua
+                ? "Xóa lớp học thành công!"
+                : "Không thể xóa lớp học.";
+
+            return ketQua;
+        }
+    }
+}
