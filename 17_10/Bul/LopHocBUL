@@ -1,0 +1,285 @@
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using QuanLySinhVien.DAL;
+using QuanLySinhVien.DTO;
+
+namespace QuanLySinhVien.BUL
+{
+    public class SinhVienBUL
+    {
+        private readonly SinhVienDAO sinhVienDAO;
+        private readonly LopHocDAO lopHocDAO;
+
+        public SinhVienBUL()
+        {
+            sinhVienDAO = new SinhVienDAO();
+            lopHocDAO = new LopHocDAO();
+        }
+
+        public List<SinhVien> LayDanhSach()
+        {
+            return sinhVienDAO.LayDanhSach();
+        }
+
+        public SinhVien? TimTheoMa(string maSV)
+        {
+            if (string.IsNullOrWhiteSpace(maSV))
+            {
+                throw new ArgumentException(
+                    "Mã sinh viên không được để trống.");
+            }
+
+            return sinhVienDAO.TimTheoMa(maSV.Trim());
+        }
+
+        public bool KiemTraTonTai(string maSV)
+        {
+            if (string.IsNullOrWhiteSpace(maSV))
+            {
+                throw new ArgumentException(
+                    "Mã sinh viên không được để trống.");
+            }
+
+            return sinhVienDAO.KiemTraTonTai(maSV.Trim());
+        }
+
+        private void KiemTraDuLieu(SinhVien sv)
+        {
+            if (sv == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(sv),
+                    "Thông tin sinh viên không hợp lệ.");
+            }
+
+            sv.MaSV = sv.MaSV?.Trim() ?? "";
+            sv.HoTen = sv.HoTen?.Trim() ?? "";
+            sv.Email = sv.Email?.Trim() ?? "";
+            sv.DienThoai = sv.DienThoai?.Trim() ?? "";
+            sv.MaLop = sv.MaLop?.Trim() ?? "";
+            sv.TrangThai = sv.TrangThai?.Trim() ?? "";
+
+            Dictionary<string, string> danhSachLoi =
+                LayLoiDuLieu(sv);
+
+            if (danhSachLoi.Count > 0)
+            {
+                throw new ValidationException(
+                    string.Join(
+                        Environment.NewLine,
+                        danhSachLoi.Values
+                    )
+                );
+            }
+
+            if (!lopHocDAO.KiemTraTonTai(sv.MaLop))
+            {
+                throw new InvalidOperationException(
+                    "Lớp học không tồn tại.");
+            }
+        }
+
+        public bool Them(SinhVien sv, out string thongBao)
+        {
+            KiemTraDuLieu(sv);
+
+            if (sinhVienDAO.KiemTraTonTai(sv.MaSV))
+            {
+                throw new InvalidOperationException(
+                    "Mã sinh viên đã tồn tại.");
+            }
+
+            bool ketQua = sinhVienDAO.Them(sv);
+
+            thongBao = ketQua
+                ? "Thêm sinh viên thành công!"
+                : "Không thể thêm sinh viên.";
+
+            return ketQua;
+        }
+
+        public bool Sua(SinhVien sv, out string thongBao)
+        {
+            KiemTraDuLieu(sv);
+
+            if (!sinhVienDAO.KiemTraTonTai(sv.MaSV))
+            {
+                throw new InvalidOperationException(
+                    "Không tìm thấy sinh viên cần sửa.");
+            }
+
+            bool ketQua = sinhVienDAO.Sua(sv);
+
+            thongBao = ketQua
+                ? "Cập nhật sinh viên thành công!"
+                : "Không có thông tin nào được cập nhật.";
+
+            return ketQua;
+        }
+
+        public bool Xoa(string maSV, out string thongBao)
+        {
+            if (string.IsNullOrWhiteSpace(maSV))
+            {
+                throw new ArgumentException(
+                    "Vui lòng chọn sinh viên cần xóa.");
+            }
+
+            maSV = maSV.Trim();
+
+            if (!sinhVienDAO.KiemTraTonTai(maSV))
+            {
+                throw new InvalidOperationException(
+                    "Sinh viên không tồn tại.");
+            }
+
+            bool ketQua = sinhVienDAO.Xoa(maSV);
+
+            thongBao = ketQua
+                ? "Xóa sinh viên thành công!"
+                : "Không thể xóa sinh viên.";
+
+            return ketQua;
+        }
+
+        public List<SinhVien> TimKiem(
+            string tuKhoa,
+            string maLop,
+            decimal diemTu)
+        {
+            tuKhoa = tuKhoa?.Trim() ?? "";
+            maLop = maLop?.Trim() ?? "";
+
+            if (diemTu < 0 || diemTu > 10)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(diemTu),
+                    "Điểm tìm kiếm phải từ 0 đến 10.");
+            }
+
+            return sinhVienDAO.TimKiem(
+                tuKhoa,
+                maLop,
+                diemTu
+            );
+        }
+
+        public List<SinhVien> TimKiemTrenDanhSach(
+            List<SinhVien> danhSach,
+            string tuKhoa,
+            string maLop,
+            decimal diemTu)
+        {
+            if (danhSach == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(danhSach),
+                    "Danh sách sinh viên không hợp lệ.");
+            }
+
+            tuKhoa = (tuKhoa ?? "").Trim();
+            maLop = (maLop ?? "").Trim();
+
+            if (diemTu < 0 || diemTu > 10)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(diemTu),
+                    "Điểm tìm kiếm phải từ 0 đến 10.");
+            }
+
+            IEnumerable<SinhVien> ketQua = danhSach;
+
+            if (!string.IsNullOrWhiteSpace(tuKhoa))
+            {
+                ketQua = ketQua.Where(sv =>
+                    (sv.MaSV ?? "").IndexOf(
+                        tuKhoa,
+                        StringComparison.OrdinalIgnoreCase) >= 0 ||
+
+                    (sv.HoTen ?? "").IndexOf(
+                        tuKhoa,
+                        StringComparison.OrdinalIgnoreCase) >= 0 ||
+
+                    (sv.Email ?? "").IndexOf(
+                        tuKhoa,
+                        StringComparison.OrdinalIgnoreCase) >= 0 ||
+
+                    (sv.DienThoai ?? "").Contains(tuKhoa)
+                );
+            }
+
+            if (!string.IsNullOrWhiteSpace(maLop))
+            {
+                ketQua = ketQua.Where(sv =>
+                    string.Equals(
+                        sv.MaLop,
+                        maLop,
+                        StringComparison.OrdinalIgnoreCase)
+                );
+            }
+
+            ketQua = ketQua.Where(sv => sv.Diem >= diemTu);
+
+            return ketQua.OrderBy(sv => sv.MaSV).ToList();
+        }
+
+        public Dictionary<string, string> LayLoiDuLieu(SinhVien sv)
+        {
+            Dictionary<string, string> danhSachLoi =
+                new Dictionary<string, string>();
+
+            if (sv == null)
+            {
+                danhSachLoi["MaSV"] =
+                    "Thông tin sinh viên không hợp lệ.";
+
+                return danhSachLoi;
+            }
+
+            var context = new ValidationContext(sv);
+            var results = new List<ValidationResult>();
+
+            Validator.TryValidateObject(
+                sv,
+                context,
+                results,
+                true
+            );
+
+            foreach (ValidationResult loi in results)
+            {
+                foreach (string tenThuocTinh in loi.MemberNames)
+                {
+                    if (!danhSachLoi.ContainsKey(tenThuocTinh))
+                    {
+                        danhSachLoi[tenThuocTinh] =
+                            loi.ErrorMessage ?? "Dữ liệu không hợp lệ.";
+                    }
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(sv.HoTen))
+            {
+                danhSachLoi["HoTen"] =
+                    "Họ tên không được để trống.";
+            }
+
+            if (sv.NgaySinh.Date > DateTime.Today)
+            {
+                danhSachLoi["NgaySinh"] =
+                    "Ngày sinh không được lớn hơn ngày hiện tại.";
+            }
+
+            if (sv.GioiTinh != "Nam" && sv.GioiTinh != "Nữ")
+            {
+                danhSachLoi["GioiTinh"] =
+                    "Giới tính không hợp lệ.";
+            }
+
+            return danhSachLoi;
+        }
+    }
+}
