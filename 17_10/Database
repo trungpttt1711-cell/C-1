@@ -1,89 +1,76 @@
 
-CREATE DATABASE IF NOT EXISTS QuanLySinhVienDB
+CREATE DATABASE IF NOT EXISTS QuanLySinhVienMoi
 CHARACTER SET utf8mb4
 COLLATE utf8mb4_unicode_ci;
 
-USE QuanLySinhVienDB;
+USE QuanLySinhVienMoi;
 
 CREATE TABLE IF NOT EXISTS LopHoc (
     MaLop VARCHAR(7) NOT NULL,
     TenLop VARCHAR(100) NOT NULL,
-    PRIMARY KEY (MaLop)
-) ENGINE=InnoDB;
+    PRIMARY KEY (MaLop),
+    CONSTRAINT CK_LopHoc_MaLop
+        CHECK (MaLop REGEXP '^CSE[0-9]{4}$')
+);
 
 CREATE TABLE IF NOT EXISTS SinhVien (
     MaSV VARCHAR(8) NOT NULL,
     HoTen VARCHAR(100) NOT NULL,
-    MaLop VARCHAR(7) NOT NULL,
     NgaySinh DATE NOT NULL,
-    GioiTinh VARCHAR(10),
-    DiaChi VARCHAR(255),
-    SoDienThoai VARCHAR(15),
-    Email VARCHAR(100),
-    TrangThai VARCHAR(50),
-    Diem DOUBLE NOT NULL DEFAULT 0,
+    GioiTinh VARCHAR(3) NOT NULL,
+    Email VARCHAR(254) NOT NULL,
+    DienThoai VARCHAR(10) NOT NULL,
+    Diem DECIMAL(4,2) NOT NULL DEFAULT 0,
+    MaLop VARCHAR(7) NOT NULL,
+    TrangThai VARCHAR(30) NOT NULL DEFAULT 'Đang học',
+
     PRIMARY KEY (MaSV),
-    INDEX IX_SinhVien_MaLop (MaLop),
+
     CONSTRAINT FK_SinhVien_LopHoc
         FOREIGN KEY (MaLop)
-        REFERENCES LopHoc(MaLop)
-        ON UPDATE CASCADE
-        ON DELETE RESTRICT
-) ENGINE=InnoDB;
+        REFERENCES LopHoc(MaLop),
 
-SET @hasDiaChi = (
-    SELECT COUNT(*)
-    FROM information_schema.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE()
-      AND TABLE_NAME = 'SinhVien'
-      AND COLUMN_NAME = 'DiaChi'
+    CONSTRAINT CK_SinhVien_Diem
+        CHECK (Diem BETWEEN 0 AND 10),
+
+    CONSTRAINT CK_SinhVien_MaSV
+        CHECK (MaSV REGEXP '^SV[0-9]{6}$'),
+
+    CONSTRAINT CK_SinhVien_GioiTinh
+        CHECK (GioiTinh IN ('Nam', 'Nữ'))
 );
 
-SET @sql = IF(
-    @hasDiaChi = 0,
-    'ALTER TABLE SinhVien ADD COLUMN DiaChi VARCHAR(255) NULL',
-    'SELECT 1'
-);
+USE QuanLySinhVienMoi;
 
-PREPARE stmt FROM @sql;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
-
-INSERT INTO LopHoc (MaLop, TenLop) VALUES
-('CSE0001', 'Khoa học máy tính 01'),
-('CSE0002', 'Khoa học máy tính 02'),
-('CSE0003', 'Khoa học máy tính 03'),
-('CSE2023', 'Cong nghe thong tin K23'),
-('CSE2024', 'Cong nghe thong tin K24'),
-('CSE2025', 'Cong nghe thong tin K25')
-ON DUPLICATE KEY UPDATE MaLop = MaLop;
+INSERT INTO LopHoc (MaLop, TenLop)
+VALUES
+('CSE0001', 'Khoa học máy tính 1'),
+('CSE0002', 'Khoa học máy tính 2'),
+('CSE0003', 'Kỹ thuật phần mềm')
+ON DUPLICATE KEY UPDATE TenLop = VALUES(TenLop);
 
 INSERT INTO SinhVien
-(
-    MaSV, HoTen, MaLop, NgaySinh,
-    GioiTinh, DiaChi, SoDienThoai,
-    Email, TrangThai, Diem
-)
+(MaSV, HoTen, NgaySinh, GioiTinh, Email,
+ DienThoai, Diem, MaLop, TrangThai)
 VALUES
-(
-    'SV000001', 'Nguyen Van An', 'CSE2023',
-    '2005-05-12', 'Nam', 'Ha Noi',
-    '0912345678', 'an@gmail.com',
-    'Dang hoc', 8.5
-),
-(
-    'SV000002', 'Tran Thi Binh', 'CSE2024',
-    '2006-08-20', 'Nu', 'Hai Phong',
-    '0987654321', 'binh@gmail.com',
-    'Dang hoc', 9.0
-),
-(
-    'SV000003', 'Le Van Cuong', 'CSE2024',
-    '2006-02-15', 'Nam', 'Hai Duong',
-    '0901234567', 'cuong@gmail.com',
-    'Dang hoc', 7.5
-)
+('SV000001', 'Nguyễn Văn An', '2005-04-15',
+ 'Nam', 'an@gmail.com', '0912345678',
+ 8.50, 'CSE0001', 'Đang học'),
+
+('SV000002', 'Trần Thị Bình', '2005-08-20',
+ 'Nữ', 'binh@gmail.com', '0987654321',
+ 9.00, 'CSE0001', 'Đang học'),
+
+('SV000003', 'Lê Văn Cường', '2004-11-10',
+ 'Nam', 'cuong@gmail.com', '0901234567',
+ 7.25, 'CSE0002', 'Đang học'),
+
+('SV000004', 'Phạm Thị Dung', '2005-02-12',
+ 'Nữ', 'dung@gmail.com', '0934567890',
+ 6.75, 'CSE0003', 'Bảo lưu')
 ON DUPLICATE KEY UPDATE MaSV = MaSV;
 
 SELECT * FROM LopHoc;
+
 SELECT * FROM SinhVien;
+SHOW DATABASES;
