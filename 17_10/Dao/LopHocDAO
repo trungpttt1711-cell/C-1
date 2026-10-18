@@ -1,0 +1,189 @@
+
+using System;
+using System.Collections.Generic;
+using MySql.Data.MySqlClient;
+using QuanLySinhVien.DTO;
+
+namespace QuanLySinhVien.DAL
+{
+    public class LopHocDAO
+    {
+        public List<LopHoc> LayDanhSachLop()
+        {
+            List<LopHoc> danhSach = new List<LopHoc>();
+
+            string sql = @"
+                SELECT MaLop, TenLop
+                FROM LopHoc
+                ORDER BY MaLop";
+
+            using (MySqlConnection conn =
+                DataHelper.GetConnection())
+            using (MySqlCommand cmd =
+                new MySqlCommand(sql, conn))
+            {
+                conn.Open();
+
+                using (MySqlDataReader reader =
+                    cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        LopHoc lop = new LopHoc
+                        {
+                            MaLop = reader["MaLop"].ToString() ?? "",
+                            TenLop = reader["TenLop"].ToString() ?? ""
+                        };
+
+                        danhSach.Add(lop);
+                    }
+                }
+            }
+
+            return danhSach;
+        }
+
+        public LopHoc? TimTheoMa(string maLop)
+        {
+            string sql = @"
+                SELECT MaLop, TenLop
+                FROM LopHoc
+                WHERE MaLop = @MaLop";
+
+            using (MySqlConnection conn =
+                DataHelper.GetConnection())
+            using (MySqlCommand cmd =
+                new MySqlCommand(sql, conn))
+            {
+                cmd.Parameters.AddWithValue("@MaLop", maLop);
+
+                conn.Open();
+
+                using (MySqlDataReader reader =
+                    cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        return new LopHoc
+                        {
+                            MaLop = reader["MaLop"].ToString() ?? "",
+                            TenLop = reader["TenLop"].ToString() ?? ""
+                        };
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        public bool KiemTraTonTai(string maLop)
+        {
+            string sql = @"
+                SELECT COUNT(*)
+                FROM LopHoc
+                WHERE MaLop = @MaLop";
+
+            using (MySqlConnection conn =
+                DataHelper.GetConnection())
+            using (MySqlCommand cmd =
+                new MySqlCommand(sql, conn))
+            {
+                cmd.Parameters.AddWithValue("@MaLop", maLop);
+
+                conn.Open();
+
+                object? result = cmd.ExecuteScalar();
+
+                return Convert.ToInt32(result) > 0;
+            }
+        }
+
+        public bool Them(LopHoc lop)
+        {
+            string sql = @"
+                INSERT INTO LopHoc (MaLop, TenLop)
+                VALUES (@MaLop, @TenLop)";
+
+            using (MySqlConnection conn =
+                DataHelper.GetConnection())
+            using (MySqlCommand cmd =
+                new MySqlCommand(sql, conn))
+            {
+                cmd.Parameters.AddWithValue(
+                    "@MaLop", lop.MaLop);
+
+                cmd.Parameters.AddWithValue(
+                    "@TenLop", lop.TenLop);
+
+                conn.Open();
+
+                return cmd.ExecuteNonQuery() > 0;
+            }
+        }
+
+        public bool Sua(LopHoc lop)
+        {
+            string sql = @"
+                UPDATE LopHoc
+                SET TenLop = @TenLop
+                WHERE MaLop = @MaLop";
+
+            using (MySqlConnection conn =
+                DataHelper.GetConnection())
+            using (MySqlCommand cmd =
+                new MySqlCommand(sql, conn))
+            {
+                cmd.Parameters.AddWithValue(
+                    "@MaLop", lop.MaLop);
+
+                cmd.Parameters.AddWithValue(
+                    "@TenLop", lop.TenLop);
+
+                conn.Open();
+
+                return cmd.ExecuteNonQuery() > 0;
+            }
+        }
+
+        public bool Xoa(string maLop)
+        {
+            string sql = @"
+                DELETE FROM LopHoc
+                WHERE MaLop = @MaLop";
+
+            using (MySqlConnection conn =
+                DataHelper.GetConnection())
+            using (MySqlCommand cmd =
+                new MySqlCommand(sql, conn))
+            {
+                cmd.Parameters.AddWithValue("@MaLop", maLop);
+
+                conn.Open();
+
+                return cmd.ExecuteNonQuery() > 0;
+            }
+        }
+
+        public bool LopCoSinhVien(string maLop)
+        {
+            string sql = @"
+                SELECT COUNT(*)
+                FROM SinhVien
+                WHERE MaLop = @MaLop";
+
+            using (MySqlConnection conn =
+                DataHelper.GetConnection())
+            using (MySqlCommand cmd =
+                new MySqlCommand(sql, conn))
+            {
+                cmd.Parameters.AddWithValue("@MaLop", maLop);
+
+                conn.Open();
+
+                object? result = cmd.ExecuteScalar();
+
+                return Convert.ToInt32(result) > 0;
+            }
+        }
+    }
+}
